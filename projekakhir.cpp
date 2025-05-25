@@ -39,21 +39,19 @@ void tambahlistdepan(Node **head, const string &judul, const string &deskripsi, 
     *head = newNode;
 }
 
-void tambahlistbelakang(Node **head, const string &judul, const string &deskripsi, float rating = 0.0)
-{
-    Node *newNode = buatlist(judul, deskripsi, rating);
-    if (*head == NULL)
-    {
-        *head = newNode;
-        return;
-    }
-    Node *bantu = *head;
-    while (bantu->next != NULL)
-    {
-        bantu = bantu->next;
-    }
-    bantu->next = newNode;
-    newNode->prev = bantu;
+void searchItem(string key, string judul, Node *head) {
+    Node* bantu = head;
+    bool found = false;
+    while (bantu != NULL) {
+        if (bantu->judul == key) {
+                cout << "Movie found!" << endl;
+                cout << "Title\t\t\t\t: " << bantu->judul << endl;
+                cout << "Description\t: " << bantu->deskripsi << endl;
+                cout << "Rating\t\t\t: " << bantu->rating << endl;
+            } 
+            bantu = bantu->next;
+        }
+    if (!found) cout << "Movie with title '" << judul << "' not found." << endl;
 }
 
 Node *searching(Node *head, const string &key)
@@ -96,7 +94,7 @@ void deleteList(Node **head, const string &judul)
     }
 }
 
-void sortList(Node **head)
+void sortListByRating(Node **head)
 {
     if (*head == NULL || (*head)->next == NULL)
         return; // List kosong atau hanya satu elemen
@@ -108,8 +106,8 @@ void sortList(Node **head)
         Node *bantu = *head;
         while (bantu->next != NULL)
         {
-            if (bantu->judul > bantu->next->judul)
-            { // Mengurutkan berdasarkan judul
+            if (bantu->rating < bantu->next->rating) // Urutkan dari rating tertinggi ke terendah
+            {
                 swap(bantu->judul, bantu->next->judul);
                 swap(bantu->deskripsi, bantu->next->deskripsi);
                 swap(bantu->rating, bantu->next->rating);
@@ -131,7 +129,7 @@ void tampilkandaridepan(Node *head)
     cout << "Here's your Watch Lists: " << endl;
     while (bantu != NULL)
     {
-        cout << bantu->judul << "  ";
+        cout << bantu->judul << "  " << endl;
         bantu = bantu->next;
     }
     cout << endl;
@@ -163,8 +161,9 @@ int main()
     cin.ignore();
     menu();
     Node *head = NULL;
-    while (pilihmenu != 5)
+    while (pilihmenu != 6)
     {
+        menu();
         switch (pilihmenu)
         {
         case 1:
@@ -178,9 +177,9 @@ int main()
             getline(cin, deskripsi);
             cout << "Rating (0.0 - 5.0): ";
             cin >> rating;
+            cin.ignore();
             tambahlistdepan(&head, judul, deskripsi, rating);
-            cout << judul << " " << "added to your WatchList!" << endl;
-            cout << endl;
+            cout << judul << " added to your WatchList!" << endl;
             break;
         }
         case 2:
@@ -193,14 +192,24 @@ int main()
             string judul;
             cout << "Enter the title of the movie: ";
             getline(cin, judul);
-            searching(head, judul);
+            Node* hasil = searching(head, judul);
+            if (hasil != NULL) {
+                cout << "Movie found!" << endl;
+                cout << "Title\t\t: " << hasil->judul << endl;
+                cout << "Description\t: " << hasil->deskripsi << endl;
+                cout << "Rating\t\t: " << hasil->rating << endl;
+            } else {
+                cout << "Movie with title '" << judul << "' not found." << endl;
+            }
             break;
         }
         case 4:
         {
-            
+            sortListByRating(&head);
+            cout << "Watch List sorted by rating (highest to lowest):" << endl;
+            tampilkandaridepan(head);
+            break;
         }
-        
         case 5:
         {
             string judul;
@@ -213,8 +222,7 @@ int main()
             cout << "! Invalid !" << endl;
         }
         cout << "Press ENTER to back to menu..." << endl;
-        cin.ignore();
-        menu();
+        cin.get();
     }
     cout << "Thank You and Happy Watching!";
     return 0;
