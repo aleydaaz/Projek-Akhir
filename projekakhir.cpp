@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <fstream>
+#include <cstdlib> // untuk system("cls")
 using namespace std;
 
 struct Node
@@ -11,47 +13,25 @@ struct Node
     Node *prev;
 };
 
-struct Node *buatlist(const string &judul, const string &deskripsi, float rating = 0.0)
+Node *buatlist(const string &judul, const string &deskripsi, float rating = 0.0)
 {
-    Node *newNode = new Node;
-    newNode->judul = judul;
-    newNode->deskripsi = deskripsi;
-    newNode->rating = rating;
-    newNode->next = NULL;
-    newNode->prev = NULL;
-    if (newNode->judul.empty() || newNode->deskripsi.empty())
+    if (judul.empty() || deskripsi.empty())
     {
         cout << "Title or description must not be empty!" << endl;
-        delete newNode;
         return NULL;
     }
+    Node *newNode = new Node{judul, rating, deskripsi, NULL, NULL};
     return newNode;
 }
 
 void tambahlistdepan(Node **head, const string &judul, const string &deskripsi, float rating = 0.0)
 {
     Node *newNode = buatlist(judul, deskripsi, rating);
+    if (newNode == NULL) return;
     newNode->next = *head;
     if (*head != NULL)
-    {
         (*head)->prev = newNode;
-    }
     *head = newNode;
-}
-
-void searchItem(string key, string judul, Node *head) {
-    Node* bantu = head;
-    bool found = false;
-    while (bantu != NULL) {
-        if (bantu->judul == key) {
-                cout << "Movie found!" << endl;
-                cout << "Title\t\t\t\t: " << bantu->judul << endl;
-                cout << "Description\t: " << bantu->deskripsi << endl;
-                cout << "Rating\t\t\t: " << bantu->rating << endl;
-            } 
-            bantu = bantu->next;
-        }
-    if (!found) cout << "Movie with title '" << judul << "' not found." << endl;
 }
 
 Node *searching(Node *head, const string &key)
@@ -60,9 +40,7 @@ Node *searching(Node *head, const string &key)
     while (bantu != NULL)
     {
         if (bantu->judul == key)
-        {
             return bantu;
-        }
         bantu = bantu->next;
     }
     return NULL;
@@ -71,42 +49,35 @@ Node *searching(Node *head, const string &key)
 void deleteList(Node **head, const string &judul)
 {
     Node *nodeToDelete = searching(*head, judul);
-    if (nodeToDelete != NULL)
+    if (nodeToDelete)
     {
-        if (nodeToDelete->prev != NULL)
-        {
+        if (nodeToDelete->prev)
             nodeToDelete->prev->next = nodeToDelete->next;
-        }
         else
-        {
-            *head = nodeToDelete->next; // Jika node yang dihapus adalah head
-        }
-        if (nodeToDelete->next != NULL)
-        {
+            *head = nodeToDelete->next;
+        if (nodeToDelete->next)
             nodeToDelete->next->prev = nodeToDelete->prev;
-        }
         delete nodeToDelete;
-        cout << judul << " " << "has been successfully deleted." << endl;
+        cout << judul << " has been successfully deleted." << endl;
     }
     else
     {
-        cout << judul << " " << "not found" << endl;
+        cout << judul << " not found" << endl;
     }
 }
 
 void sortListByRating(Node **head)
 {
     if (*head == NULL || (*head)->next == NULL)
-        return; // List kosong atau hanya satu elemen
-
+        return;
     bool swapped;
     do
     {
         swapped = false;
         Node *bantu = *head;
-        while (bantu->next != NULL)
+        while (bantu->next)
         {
-            if (bantu->rating < bantu->next->rating) // Urutkan dari rating tertinggi ke terendah
+            if (bantu->rating < bantu->next->rating)
             {
                 swap(bantu->judul, bantu->next->judul);
                 swap(bantu->deskripsi, bantu->next->deskripsi);
@@ -129,16 +100,59 @@ void tampilkandaridepan(Node *head)
     cout << "Here's your Watch Lists: " << endl;
     while (bantu != NULL)
     {
-        cout << bantu->judul << "  " << endl;
+        cout << "Title: " << bantu->judul << endl;
+        cout << "Description: " << bantu->deskripsi << endl;
+        cout << "Rating: " << bantu->rating << endl;
+        cout << "-----------------------------" << endl;
         bantu = bantu->next;
     }
-    cout << endl;
 }
 
-int pilihmenu;
+void simpanKeFile(Node *head)
+{
+    ofstream file("watchlist.txt");
+    Node *bantu = head;
+    while (bantu != NULL)
+    {
+        file << bantu->judul << "|" << bantu->deskripsi << "|" << bantu->rating << endl;
+        bantu = bantu->next;
+    }
+    file.close();
+}
+
+void bacaDariFile(Node **head)
+{
+    ifstream file("watchlist.txt");
+    string line;
+    while (getline(file, line))
+    {
+        size_t pos1 = line.find('|');
+        size_t pos2 = line.rfind('|');
+        if (pos1 != string::npos && pos2 != string::npos && pos1 != pos2)
+        {
+            string judul = line.substr(0, pos1);
+            string deskripsi = line.substr(pos1 + 1, pos2 - pos1 - 1);
+            float rating = stof(line.substr(pos2 + 1));
+            tambahlistdepan(head, judul, deskripsi, rating);
+        }
+    }
+    file.close();
+}
+
+bool login()
+{
+    string user, pass;
+    cout << "=== Login to YourWatchingLIST ===" << endl;
+    cout << "Username: ";
+    getline(cin, user);
+    cout << "Password: ";
+    getline(cin, pass);
+    // Dummy username & password
+    return (user == "admin" && pass == "1234");
+}
 
 void menu()
-{   
+{
     cout << "========================================" << endl;
     cout << "         YourWatchingLIST Menu          " << endl;
     cout << "========================================" << endl;
@@ -150,26 +164,34 @@ void menu()
     cout << "6. Exit" << endl;
     cout << "========================================" << endl;
     cout << "Select Menu: ";
-    cin >> pilihmenu;
-    cin.ignore();
 }
 
 int main()
 {
-    cout << "===== Welcome to YourWatchingLIST, Buddy! =====" << endl;
-    cout << "Press ENTER to continue..." << endl;
-    cin.ignore();
-    menu();
-    Node *head = NULL;
-    while (pilihmenu != 6)
+    system("cls");
+    if (!login())
     {
+        cout << "Login failed. Exiting..." << endl;
+        return 0;
+    }
+
+    Node *head = NULL;
+    bacaDariFile(&head);
+    int pilihmenu;
+
+    do
+    {
+        system("cls");
         menu();
+        cin >> pilihmenu;
+        cin.ignore();
+        system("cls");
+
         switch (pilihmenu)
         {
         case 1:
         {
-            string judul;
-            string deskripsi;
+            string judul, deskripsi;
             float rating;
             cout << "Title: ";
             getline(cin, judul);
@@ -183,33 +205,32 @@ int main()
             break;
         }
         case 2:
-        {
             tampilkandaridepan(head);
             break;
-        }
         case 3:
         {
             string judul;
             cout << "Enter the title of the movie: ";
             getline(cin, judul);
-            Node* hasil = searching(head, judul);
-            if (hasil != NULL) {
+            Node *hasil = searching(head, judul);
+            if (hasil != NULL)
+            {
                 cout << "Movie found!" << endl;
                 cout << "Title\t\t: " << hasil->judul << endl;
                 cout << "Description\t: " << hasil->deskripsi << endl;
                 cout << "Rating\t\t: " << hasil->rating << endl;
-            } else {
+            }
+            else
+            {
                 cout << "Movie with title '" << judul << "' not found." << endl;
             }
             break;
         }
         case 4:
-        {
             sortListByRating(&head);
             cout << "Watch List sorted by rating (highest to lowest):" << endl;
             tampilkandaridepan(head);
             break;
-        }
         case 5:
         {
             string judul;
@@ -217,13 +238,21 @@ int main()
             getline(cin, judul);
             deleteList(&head, judul);
             break;
-        }  
-        default:
-            cout << "! Invalid !" << endl;
         }
-        cout << "Press ENTER to back to menu..." << endl;
-        cin.get();
-    }
-    cout << "Thank You and Happy Watching!";
+        case 6:
+            simpanKeFile(head);
+            cout << "Thank You and Happy Watching!" << endl;
+            break;
+        default:
+            cout << "Invalid menu choice." << endl;
+        }
+        if (pilihmenu != 6)
+        {
+            cout << "\nPress ENTER to go back to menu..." << endl;
+            cin.get();
+        }
+
+    } while (pilihmenu != 6);
+
     return 0;
 }
